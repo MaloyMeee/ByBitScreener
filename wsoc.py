@@ -15,21 +15,24 @@ ws = WebSocket(
 )
 
 global_all_tickers = []
+volume_usdt = 0
+
+
 def get_all_tickers():  # все тикеры фьючерсов
+    global global_all_tickers
     all_tickers = []
     symbol = session.get_instruments_info(
         category="linear",
         status="Trading",
-        quoteCoin="USDT"
     )
-    request = symbol.get('result').get('list')
+    request = symbol.get('result').get('list')      #КАК-ТО УДАЛИТЬ ЕБУЧИЕ ОПЦИОНЫ
     for i in request:
         all_tickers.append(i.get('symbol'))
         global_all_tickers.append(i.get('symbol'))
     return all_tickers
+
+
 th.Thread(target=get_all_tickers).start()
-
-
 
 
 def get_ask(message):
@@ -43,22 +46,27 @@ def get_ask(message):
     ask = ask.reindex(index=ask.index[::-1])  # переворачиваем таблицу по вертикали
     return ask
 
+
 def get_bid(message):
-    bid = pd.DataFrame(message.get('data').get('b'), columns=['price', 'volume'])  # делаем бид таблицу с ценой и объемом
+    bid = pd.DataFrame(message.get('data').get('b'),
+                       columns=['price', 'volume'])  # делаем бид таблицу с ценой и объемом
     bid.price = bid.price.astype(float)
     bid.volume = bid.volume.astype(float)
-    bid['vol_usdt'] = bid['price'] * bid['volume'] # добавляем столбец с объемом в баксах
+    bid['vol_usdt'] = bid['price'] * bid['volume']  # добавляем столбец с объемом в баксах
     bid.vol_usdt = bid.vol_usdt.astype(int)
     bid.index += 1
     return bid
+
 
 def filter_usdt_vol(table, vol):
     filtered_vol = table[table['vol_usdt'] >= int(vol)]
     return filtered_vol
 
+
 def get_name(message):
     ticker = message.get('data').get('s')
     return ticker
+
 
 def bidask(ask, bid, ticker):
     zero = pd.DataFrame({'price': ['-----'], 'volume': ['-----'], 'vol_usdt': [ticker]})
@@ -66,13 +74,14 @@ def bidask(ask, bid, ticker):
     bidask = pd.concat([bidask, bid])
     return bidask
 
+
 def handle_message(message):
-    #print(message)
+    # print(message)
     ticker = get_name(message)
     ask = get_ask(message)
     bid = get_bid(message)
-    filt_ask = filter_usdt_vol(ask, vol=100000) # КАК СЮДА ЗАСУНУТЬ VOL УКАЗЫВАЯ С КЛАВЫ????
-    filt_bid = filter_usdt_vol(bid, vol=100000)
+    filt_ask = filter_usdt_vol(ask, volume_usdt)  # КАК СЮДА ЗАСУНУТЬ VOL УКАЗЫВАЯ С КЛАВЫ????
+    filt_bid = filter_usdt_vol(bid, volume_usdt)
     if filt_ask.empty and filt_bid.empty:
         return 0
     elif filt_ask.empty:
@@ -81,7 +90,6 @@ def handle_message(message):
         print(f'{ticker}\n{filt_ask}\n-----------------\n\n')
     else:
         print(f'{bidask(filt_ask, filt_bid, ticker)}\n\n')
-
 
 
 def websocket_thread(symbol):
@@ -95,11 +103,13 @@ def websocket_thread(symbol):
 
 
 def main():
-    #start = time()
+    # start = time()
+    global volume_usdt
+    volume_usdt = input('Volume: ')
     all_tickers = get_all_tickers()
     for i in all_tickers:
         th.Thread(target=websocket_thread, args=(i,)).start()
-    #print(f'Время работы: {time() - start}')
+    # print(f'Время работы: {time() - start}')
     while True:
         if len(all_tickers) != len(global_all_tickers):
             list_difference = []
@@ -108,7 +118,6 @@ def main():
                     list_difference.append(element)
             for i in list_difference:
                 th.Thread(target=websocket_thread, args=(i,)).start()
-
 
 
 main()
