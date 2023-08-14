@@ -25,10 +25,14 @@ def get_all_tickers():  # все тикеры фьючерсов
         category="linear",
         status="Trading",
     )
-    request = symbol.get('result').get('list')      #КАК-ТО УДАЛИТЬ ЕБУЧИЕ ОПЦИОНЫ
+    request = symbol.get('result').get('list')  # КАК-ТО УДАЛИТЬ ЕБУЧИЕ ОПЦИОНЫ
     for i in request:
-        all_tickers.append(i.get('symbol'))
-        global_all_tickers.append(i.get('symbol'))
+        if '-' in i.get('symbol'):
+            request.remove(i)
+            continue
+        else:
+            all_tickers.append(i.get('symbol'))
+            global_all_tickers.append(i.get('symbol'))
     return all_tickers
 
 
@@ -68,6 +72,19 @@ def get_name(message):
     return ticker
 
 
+def get_tic(ticker):  # парсим и инфы о минимальной цене шага по тикеру
+    tic = session.get_instruments_info(  # парсим инфу о тикерах
+        category="linear",
+        symbol=ticker
+    )
+    tic = tic.get('result')  # начало поиска минмиального шага цены
+    tic = tic.get('list')
+    tic = tic[0]
+    tic = tic.get('priceFilter')
+    tic = tic.get('tickSize')
+    return tic
+
+
 def bidask(ask, bid, ticker):
     zero = pd.DataFrame({'price': ['-----'], 'volume': ['-----'], 'vol_usdt': [ticker]})
     bidask = pd.concat([ask, zero])
@@ -80,7 +97,7 @@ def handle_message(message):
     ticker = get_name(message)
     ask = get_ask(message)
     bid = get_bid(message)
-    filt_ask = filter_usdt_vol(ask, volume_usdt)  # КАК СЮДА ЗАСУНУТЬ VOL УКАЗЫВАЯ С КЛАВЫ????
+    filt_ask = filter_usdt_vol(ask, volume_usdt)
     filt_bid = filter_usdt_vol(bid, volume_usdt)
     if filt_ask.empty and filt_bid.empty:
         return 0
@@ -94,7 +111,7 @@ def handle_message(message):
 
 def websocket_thread(symbol):
     x = ws.orderbook_stream(
-        depth=200,
+        depth=500,
         symbol=symbol,
         callback=handle_message
     )
