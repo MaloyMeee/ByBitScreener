@@ -33,7 +33,7 @@ def get_all_tickers():  # все тикеры фьючерсов
             all_tickers.append(i.get('symbol')) #Добавление всех тикеров в локальную переменную
             global_all_tickers.append(i.get('symbol'))  #Добавление всех тикеров в глокальную переменную
     return all_tickers
-th.Thread(target=get_all_tickers).start()   #отдельный поток под все тикеры
+th.Thread(target=get_all_tickers).start()   #отдельный поток под все тикер
 
 
 # def set_volume_in_usdt(volume_in_usdt): #  Получение объема в баксах через gui
