@@ -19,6 +19,8 @@ global_all_tickers = []
 volume_usdt = 0
 
 
+dpg.create_context()
+
 def get_all_tickers():  # все тикеры фьючерсов
     global global_all_tickers
     all_tickers = []
@@ -51,6 +53,15 @@ def get_ask(message):
     ask = ask.reindex(index=ask.index[::-1])  # переворачиваем таблицу по вертикали
     return ask
 
+def get_ask_gui(message):
+    ask = message.get('data').get('a')
+    with dpg.window(label='ask'):
+        with dpg.table(header_row=True,):
+            dpg.add_table_column(label='price')
+            dpg.add_table_column(label='volume')
+            dpg.add_table_column(label='vol_usdt')
+            for i in ask:
+                dpg.add_table_row(price=i[0], volume=i[1], vol_usdt=(i[0]*i[1]))
 
 def get_bid(message):
     bid = pd.DataFrame(message.get('data').get('b'),
@@ -94,22 +105,18 @@ def bidask(ask, bid, ticker):
 
 
 def handle_message(message):
-    # print(message)
     ticker = get_name(message)
-    ask = get_ask(message)
+    ask = get_ask_gui(message)
     bid = get_bid(message)
     filt_ask = filter_usdt_vol(ask, volume_usdt)
     filt_bid = filter_usdt_vol(bid, volume_usdt)
     if filt_ask.empty and filt_bid.empty:
         return 0
     elif filt_ask.empty:
-        print('1')
         return ticker, filt_bid
     elif filt_bid.empty:
-        print('2')
         return ticker, filt_ask
     else:
-        print('3')
         askbid = bidask(filt_ask, filt_bid, ticker)
         return askbid
 
@@ -142,3 +149,9 @@ def main():
 
 
 main()
+
+dpg.create_viewport(title='Custom Title', width=800, height=600)
+dpg.setup_dearpygui()
+dpg.show_viewport()
+dpg.start_dearpygui()
+dpg.destroy_context()

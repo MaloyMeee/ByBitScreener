@@ -1,7 +1,7 @@
 import dearpygui.dearpygui as dpg
 import pandas as pd
 import dearpygui.demo as demo
-import wsoctry as wsctry
+# import wsoctry as wsctry
 
 dpg.create_context()
 dpg.create_viewport(title="Screener", width=800, height=600)
@@ -24,6 +24,8 @@ with dpg.window(tag="Main", label='Volume in USDT', width=800, height=200):
             # for i in wsctry.get_all_tickers():
             #     dpg.add_checkbox(label=i)
             pass
+        with dpg.menu(label="Settings"):
+            dpg.add_menu_item(label="Set volume in usdt", callback=set_volume_in_usdt)
 
 dpg.setup_dearpygui()
 dpg.show_viewport()
