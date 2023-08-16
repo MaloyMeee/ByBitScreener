@@ -38,7 +38,7 @@ def get_all_tickers():  # все тикеры фьючерсов
 
 th.Thread(target=get_all_tickers).start()  # отдельный поток под все тикер
 
-#TODO перевернуть аски
+#TODO перевернуть таблицу асков
 def vol_screener(message, volume_usdt):
     ask = message.get('data').get('a')
     bid = message.get('data').get('b')
@@ -83,7 +83,7 @@ def get_tic(ticker):  # парсим и инфы о минимальной це�
 
 #TODO убрать добавление бесконечного количества новых таблиц
 def handle_message(message):
-    volume_usdt = dpg.get_value('volume_in_usdt')  # ВСЕ ЧТО НИЖЕ - НЕ РАБОТАЕТ
+    volume_usdt = dpg.get_value('volume_in_usdt')
     vol_screener(message, volume_usdt)
 
 
