@@ -38,43 +38,61 @@ def get_all_tickers():  # все тикеры фьючерсов
 
 th.Thread(target=get_all_tickers).start()  # отдельный поток под все тикер
 
-
 # TODO в скринеере мы создаем новые таблицы, надо сделать какую-то проверку на наличие таблицы и если она есть, то
 # TODO мы обновляем таблицу(не ебу как это реализовывается)
 # TODO перевернуть таблицу асков + нормально прописать циклы для цвета таблицы
+# TODO сделать выбор количества оттображения бидов\асков, т.е я могу выбрать количество полей которые будут в окне
+#
+all_open_ticker = []
+
+
 def vol_screener(message, volume_usdt):
     ask = message.get('data').get('a')
     bid = message.get('data').get('b')
     ticker = message.get('data').get('s')
-    with dpg.window(label=ticker):
-        with dpg.table(header_row=True, row_background=True) as table_id:
-            dpg.add_table_column(label='price')
-            dpg.add_table_column(label='volume')
-            dpg.add_table_column(label='vol_usdt')
-            for i in ask:
-                counter = -1
-                if float(i[0]) * float(i[1]) < volume_usdt:
-                    continue
-                else:
-                    counter += 1
-                    with dpg.table_row():
-                        for j in range(0, 2):
-                            dpg.add_text(i[j])
-                        for k in range(0, 1):
-                            dpg.add_text(str(int(float(i[0]) * float(i[1]))))
-                    dpg.set_table_row_color(table=table_id, row=counter, color=[255, 0, 0, 125])
-            for i in bid:
-                counter2 = counter
-                if float(i[0]) * float(i[1]) < volume_usdt:
-                    continue
-                else:
-                    counter2 += 1
-                    with dpg.table_row():
-                        for j in range(0, 2):
-                            dpg.add_text(i[j])
-                        for k in range(0, 1):
-                            dpg.add_text(str(int(float(i[0]) * float(i[1]))))
-                    dpg.set_table_row_color(table=table_id, row=counter2, color=[0, 255, 0, 125])
+    if ticker in all_open_ticker:
+        pass
+        # dpg.delete_item(ticker)
+
+    else:
+        all_open_ticker.append(ticker)
+        with dpg.window(label=ticker) as window_id:
+            with dpg.table(header_row=True, row_background=True) as table_id:
+                dpg.add_table_column(label='price')
+                dpg.add_table_column(label='volume')
+                dpg.add_table_column(label='vol_usdt')
+                askflag = False
+                for i in ask:
+                    counter = -1
+                    if float(i[0]) * float(i[1]) < volume_usdt:
+                        continue
+                    else:
+                        askflag = True
+                        counter += 1
+                        with dpg.table_row():
+                            for j in range(0, 2):
+                                dpg.add_text(i[j])
+                            for k in range(0, 1):
+                                dpg.add_text(str(int(float(i[0]) * float(i[1]))))
+                        dpg.set_table_row_color(table=table_id, row=counter, color=[255, 0, 0, 125])
+                bidflag = False
+                for i in bid:
+                    counter2 = counter
+                    if float(i[0]) * float(i[1]) < volume_usdt:
+                        continue
+                    else:
+                        bidflag = True
+                        counter2 += 1
+                        with dpg.table_row():
+                            for j in range(0, 2):
+                                dpg.add_text(i[j])
+                            for k in range(0, 1):
+                                dpg.add_text(str(int(float(i[0]) * float(i[1]))))
+                        dpg.set_table_row_color(table=table_id, row=counter2, color=[0, 255, 0, 125])
+        if (askflag is False) and (bidflag is False):
+            dpg.delete_item(window_id)
+        else:
+            pass
 
 
 def get_tic(ticker):  # парсим и инфы о минимальной цене шага по тикеру
@@ -134,14 +152,14 @@ with dpg.viewport_menu_bar():  # Верхнее меню в всем скрин�
     with dpg.menu(label="Help"):
         pass
 
-with dpg.window(tag="Main", label='Volume in USDT', width=800, height=200):  # Окно искриера по объему в баксах
+with dpg.window(tag="Main", label='Volume in USDT', width=800, height=200):  # Окно скринера по объему в баксах
     with dpg.menu_bar():  # Верхнее меню в скринере объема
         with dpg.menu(label="Tocken"):
             for i in get_all_tickers():
                 dpg.add_checkbox(label=i)
             pass
         with dpg.menu(label="Settings"):
-            dpg.add_input_int(label="Volume in USDT", tag='volume_in_usdt')  # callback=set_volume_in_usdt)
+            dpg.add_input_int(label="Volume in USDT", tag='volume_in_usdt')
         with dpg.menu(label="Start"):
             dpg.add_button(label="Start", tag='start', callback=start_code)
             dpg.add_button(label="Stop", tag='stop')
