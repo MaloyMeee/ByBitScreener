@@ -51,35 +51,31 @@ def vol_screener(message, volume_usdt):
             dpg.add_table_column(label='price')
             dpg.add_table_column(label='volume')
             dpg.add_table_column(label='vol_usdt')
-            counter = -1
             for i in ask:
-                counter += 1
-                counter2ask = -1
+                counter = -1
                 if float(i[0]) * float(i[1]) < volume_usdt:
                     continue
                 else:
-                    counter2ask += 1
+                    counter += 1
                     with dpg.table_row():
                         for j in range(0, 2):
                             dpg.add_text(i[j])
                         for k in range(0, 1):
                             dpg.add_text(str(int(float(i[0]) * float(i[1]))))
-                    dpg.set_table_row_color(table=table_id, row=counter2ask, color=[255, 0, 0, 125])
+                    dpg.set_table_row_color(table=table_id, row=counter, color=[255, 0, 0, 125])
             for i in bid:
-                if counter2ask == -1:
-                    counter2bid=0
-                else:
-                    counter2bid = counter2ask
+                counter2 = counter
                 if float(i[0]) * float(i[1]) < volume_usdt:
                     continue
                 else:
-                    counter2bid += 1
+                    counter2 += 1
                     with dpg.table_row():
                         for j in range(0, 2):
                             dpg.add_text(i[j])
                         for k in range(0, 1):
                             dpg.add_text(str(int(float(i[0]) * float(i[1]))))
-                    dpg.set_table_row_color(table=table_id, row=counter2bid, color=[0, 255, 0, 125])
+                    dpg.set_table_row_color(table=table_id, row=counter2, color=[0, 255, 0, 125])
+
 
 def get_tic(ticker):  # парсим и инфы о минимальной цене шага по тикеру
     tic = session.get_instruments_info(  # парсим инфу о тикерах
