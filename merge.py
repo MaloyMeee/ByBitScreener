@@ -38,15 +38,18 @@ def get_all_tickers():  # все тикеры фьючерсов
 
 th.Thread(target=get_all_tickers).start()  # отдельный поток под все тикер
 
-def show_ticker(window_id): #При выборе тикеров в меню они показываются
+
+def show_ticker(window_id):  # При выборе тикеров в меню они показываются
     dpg.configure_item(window_id, visible=True)
 
-def hide_ticker(window_id): #Если тикер не выбран, то он скрывается
+
+def hide_ticker(window_id):  # Если тикер не выбран, то он скрывается
     dpg.configure_item(window_id, visible=False)
+
 
 # TODO в скринеере мы создаем новые таблицы, надо сделать какую-то проверку на наличие таблицы и если она есть, то
 # TODO мы обновляем таблицу(не ебу как это реализовывается)
-# TODO перевернуть таблицу асков + нормально прописать циклы для цвета таблицы
+# TODO перевернуть таблицу асков
 # TODO сделать выбор количества оттображения бидов\асков, т.е я могу выбрать количество полей которые будут в окне
 
 all_open_ticker = []
@@ -62,7 +65,7 @@ def vol_screener(message, volume_usdt):
 
     else:
         all_open_ticker.append(ticker)
-        with dpg.window(label=ticker) as window_id:
+        with dpg.window(label=ticker, width=200, height=200) as window_id:
             with dpg.table(header_row=True, row_background=True) as table_id:
                 dpg.add_table_column(label='price')
                 dpg.add_table_column(label='volume')
@@ -162,7 +165,8 @@ with dpg.window(tag="Main", label='Volume in USDT', width=800, height=200):  # �
                 dpg.add_checkbox(label=i)
             pass
         with dpg.menu(label="Settings"):
-            dpg.add_input_int(label="Volume in USDT", tag='volume_in_usdt', default_value=100000, step=10000, step_fast=100000, min_clamped=True, min_value=0)
+            dpg.add_input_int(label="Volume in USDT", tag='volume_in_usdt', default_value=100000, step=10000,
+                              step_fast=100000, min_clamped=True, min_value=0)
 
         with dpg.menu(label="Start"):
             dpg.add_button(label="Start", tag='start', callback=start_code)
