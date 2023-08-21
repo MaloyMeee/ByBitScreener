@@ -72,7 +72,7 @@ def vol_screener(message, volume_usdt):
                 dpg.add_table_column(label='vol_usdt')
                 askflag = False
                 counter = -1
-                for i in ask:
+                for i in ask[::-1]:
                     if float(i[0]) * float(i[1]) < volume_usdt:
                         continue
                     else:
