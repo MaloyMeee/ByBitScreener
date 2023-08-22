@@ -15,7 +15,6 @@ ws = WebSocket(  # создание WebSocket сессии
 )
 
 global_all_tickers = []  # список всех тикеров фьючерсов
-volume_usdt = 0  # объем в баксах
 
 
 def get_all_tickers():  # все тикеры фьючерсов
@@ -47,10 +46,8 @@ def hide_ticker(window_id):  # Если тикер не выбран, то он 
     dpg.configure_item(window_id, visible=False)
 
 
-# TODO в скринеере мы создаем новые таблицы, надо сделать какую-то проверку на наличие таблицы и если она есть, то
-# TODO мы обновляем таблицу(не ебу как это реализовывается)
-# TODO перевернуть таблицу асков
-# TODO сделать выбор количества оттображения бидов\асков, т.е я могу выбрать количество полей которые будут в окне
+# TODO сделать обновление таблиц, а не бесконечный их вывод
+# TODO позиционирование окон внутри окна скринера
 
 all_open_ticker = []
 
@@ -60,48 +57,58 @@ def vol_screener(message, volume_usdt):
     bid = message.get('data').get('b')
     ticker = message.get('data').get('s')
     if ticker in all_open_ticker:
-        pass  # ЗДЕСЬ ДОЛЖЕН БЫТЬ КАКОЙ-ТО КОД ОБНОВЛЯЮЩИЙ ТАБЛИЦУ
-        # dpg.delete_item(window_id)
+        pass
 
     else:
+        global posx, posy
         all_open_ticker.append(ticker)
-        with dpg.window(label=ticker, width=200, height=200) as window_id:
-            with dpg.table(header_row=True, row_background=True) as table_id:
-                dpg.add_table_column(label='price')
-                dpg.add_table_column(label='volume')
-                dpg.add_table_column(label='vol_usdt')
-                askflag = False
-                counter = -1
-                for i in ask[::-1]:
-                    if float(i[0]) * float(i[1]) < volume_usdt:
-                        continue
-                    else:
-                        askflag = True
-                        counter += 1
-                        with dpg.table_row():
-                            for j in range(0, 2):
-                                dpg.add_text(i[j])
-                            for k in range(0, 1):
-                                dpg.add_text(str(int(float(i[0]) * float(i[1]))))
-                        dpg.set_table_row_color(table=table_id, row=counter, color=[255, 0, 0, 125])
-                bidflag = False
-                counter2 = counter
-                for i in bid:
-                    if float(i[0]) * float(i[1]) < volume_usdt:
-                        continue
-                    else:
-                        bidflag = True
-                        counter2 += 1
-                        with dpg.table_row():
-                            for j in range(0, 2):
-                                dpg.add_text(i[j])
-                            for k in range(0, 1):
-                                dpg.add_text(str(int(float(i[0]) * float(i[1]))))
-                        dpg.set_table_row_color(table=table_id, row=counter2, color=[0, 255, 0, 125])
-        if (askflag is False) and (bidflag is False):
-            dpg.delete_item(window_id)
-        else:
-            pass
+        with dpg.window(label=ticker, width=200, height=230) as window_id:
+            render_table(ask, bid, volume_usdt, window_id, ticker)
+
+
+def render_table(ask, bid, volume_usdt, window_id, ticker):
+    with dpg.table(label=f'{ticker}_table', header_row=True, row_background=True) as table_id:
+        dpg.add_table_column(label='price')
+        dpg.add_table_column(label='volume')
+        dpg.add_table_column(label='vol_usdt')
+        askflag = False
+        counter = -1
+        filtask = []
+        for i in ask:
+            if float(i[0]) * float(i[1]) < volume_usdt:
+                continue
+            else:
+                filtask.append(i)
+                askflag = True
+        for ii in filtask[3::-1]:
+            counter += 1
+            with dpg.table_row():
+                for j in range(0, 2):
+                    dpg.add_text(ii[j])
+                for k in range(0, 1):
+                    dpg.add_text(str(int(float(ii[0]) * float(ii[1]))))
+            dpg.set_table_row_color(table=table_id, row=counter, color=[255, 0, 0, 125])
+        bidflag = False
+        counter2 = counter
+        filtbid = []
+        for i in bid:
+            if float(i[0]) * float(i[1]) < volume_usdt:
+                continue
+            else:
+                filtbid.append(i)
+                bidflag = True
+        for ii in filtbid[:4:]:
+            counter2 += 1
+            with dpg.table_row():
+                for j in range(0, 2):
+                    dpg.add_text(ii[j])
+                for k in range(0, 1):
+                    dpg.add_text(str(int(float(ii[0]) * float(ii[1]))))
+            dpg.set_table_row_color(table=table_id, row=counter2, color=[0, 255, 0, 125])
+    if (askflag is False) and (bidflag is False):
+        dpg.delete_item(window_id)
+    else:
+        pass
 
 
 def get_tic(ticker):  # парсим и инфы о минимальной цене шага по тикеру
@@ -133,7 +140,6 @@ def websocket_thread(symbol):
 
 
 def start_code():
-    global volume_usdt
     all_tickers = get_all_tickers()
     for i in all_tickers:
         th.Thread(target=websocket_thread, args=(i,)).start()
@@ -165,14 +171,16 @@ with dpg.window(tag="Main", label='Volume in USDT', width=800, height=200):  # �
                 dpg.add_checkbox(label=i)
             pass
         with dpg.menu(label="Settings"):
-            dpg.add_input_int(label="Volume in USDT", tag='volume_in_usdt', default_value=100000, step=10000,
+            dpg.add_input_int(label="Volume in USDT", tag='volume_in_usdt', default_value=300000, step=10000,
                               step_fast=100000, min_clamped=True, min_value=0)
+            with dpg.tooltip("volume_in_usdt"):
+                dpg.add_text("click +10.000\nCTRL+click +100.000")
 
         with dpg.menu(label="Start"):
             dpg.add_button(label="Start", tag='start', callback=start_code)
             dpg.add_button(label="Stop", tag='stop')
 
-dpg.create_viewport(title='Screener', width=800, height=600)
+dpg.create_viewport(title='Screener', width=815, height=600)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()
