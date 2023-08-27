@@ -60,10 +60,10 @@ def vol_screener(message, volume_usdt):
         pass
 
     else:
-        global posx, posy
         all_open_ticker.append(ticker)
-        with dpg.window(label=ticker, width=200, height=230) as window_id:
+        with dpg.child_window(label=ticker, width=200, height=230, parent='Main') as window_id:
             render_table(ask, bid, volume_usdt, window_id, ticker)
+
 
 
 def render_table(ask, bid, volume_usdt, window_id, ticker):
